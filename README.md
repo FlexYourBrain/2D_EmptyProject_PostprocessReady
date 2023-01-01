@@ -1,6 +1,6 @@
 
 
-# **Empty 2d project + postprocess ready** 
+# **Defold Empty 2d project + postprocess ready** 
 
 ## **USE**
 Sending message "posteffect" to the render socket "@render:" will enable or disable prost process effect.
