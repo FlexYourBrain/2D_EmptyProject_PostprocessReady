@@ -52,42 +52,59 @@ function init(self)
     self.pp_On = false
     self.postprocess = post_builder(self,false)
 end
-local function render_pp(self) -- Render post process effect with ortho
+local function render_pp(self) -- Render post process effect with ortho projection
     render.enable_texture(0, self.postprocess, render.BUFFER_COLOR_BIT)
     render.set_projection(vmath.matrix4_orthographic(-1, 1, -1, 1, -1, 1))
     render.draw(self.postprocess_pred)
     render.disable_texture(0, self.postprocess)
 end
 function update(self)
+    local window_width = render.get_window_width()
+    local window_height = render.get_window_height()
+    if window_width == 0 or window_height == 0 then
+        return
+    end
+    local proj = get_projection(self)
+    local frustum_component = proj * self.view
+    
     if self.pp_On then
         render.enable_render_target(self.postprocess)
     end
-    render.set_depth_mask(true)
+    render.set_depth_mask(true)-- Enable depth-mask before clear in order to avoid OpenGL warning (Instruments)
     render.set_stencil_mask(0xff)
     render.clear({[render.BUFFER_COLOR_BIT] = self.clear_color, [render.BUFFER_DEPTH_BIT] = 1, [render.BUFFER_STENCIL_BIT] = 0})
-    render.set_view(self.view)
-    render.set_viewport(0, 0, render.get_window_width(), render.get_window_height())
-    -- sprites etc
     render.set_depth_mask(false)
-    render.disable_state(render.STATE_DEPTH_TEST)
-    render.disable_state(render.STATE_STENCIL_TEST)
-    render.enable_state(render.STATE_BLEND)
+    
+    render.set_viewport(0, 0, window_width, window_height)
+    render.set_view(self.view)
+    render.set_projection(proj)
+    
+    -- Sprites etc
     render.set_blend_func(render.BLEND_SRC_ALPHA, render.BLEND_ONE_MINUS_SRC_ALPHA)
-    render.disable_state(render.STATE_CULL_FACE)
-    render.set_projection(get_projection(self))
-    render.draw(self.tile_pred)
-    render.draw(self.particle_pred)
-    render.draw_debug3d()
+    render.enable_state(render.STATE_BLEND)
+    render.enable_state(render.STATE_STENCIL_TEST)
+    render.draw(self.tile_pred, {frustum = frustum_component})
+    render.draw(self.particle_pred, {frustum = frustum_component})
+    render.disable_state(render.STATE_STENCIL_TEST)
+    render.disable_state(render.STATE_BLEND)
     if self.pp_On then
         render.disable_render_target(self.postprocess)
         render_pp(self)
     end
-    -- render GUI
-    render.set_view(vmath.matrix4())
-    render.set_projection(vmath.matrix4_orthographic(0, render.get_window_width(), 0, render.get_window_height(), -1, 1))
+    
+    -- Debug Draw
+    render.draw_debug3d()
+    
+    -- GUI
+    local view_gui = vmath.matrix4()
+    local proj_gui = vmath.matrix4_orthographic(0, window_width, 0, window_height, -1, 1)
+    local frustum_gui = proj_gui * view_gui
+    render.set_view(view_gui)
+    render.set_projection(proj_gui)
+    
     render.enable_state(render.STATE_STENCIL_TEST)
-    render.draw(self.gui_pred)
-    render.draw(self.text_pred)
+    render.draw(self.gui_pred, {frustum = frustum_gui})
+    render.draw(self.text_pred, {frustum = frustum_gui})
     render.disable_state(render.STATE_STENCIL_TEST)
 end
 
