@@ -33,7 +33,6 @@ end
 function init(self)
     self.tile_pred = render.predicate({"tile"})
     self.gui_pred = render.predicate({"gui"})
-    self.text_pred = render.predicate({"text"})
     self.particle_pred = render.predicate({"particle"})
     self.postprocess_pred = render.predicate({"postprocess"})
 
@@ -104,7 +103,6 @@ function update(self)
     
     render.enable_state(render.STATE_STENCIL_TEST)
     render.draw(self.gui_pred, {frustum = frustum_gui})
-    render.draw(self.text_pred, {frustum = frustum_gui})
     render.disable_state(render.STATE_STENCIL_TEST)
 end
 
